@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** wolf3d
 ** File description:
-** Raycast ground drawing callback.
+** Raycast ground and ceiling drawing callback.
 */
 
 #include "./../../include/wolf3d.h"
@@ -125,4 +125,23 @@ void draw_ground(raycast_t *raycast, setfml_t *setfml)
     fill_ground_vertices(&draw);
     draw_ground_vertices(&draw);
     sfVertexArray_destroy(draw.vertices);
+}
+
+void draw_ceiling(raycast_t *raycast, setfml_t *setfml)
+{
+    sfRectangleShape *rect = NULL;
+    sfVector2u win = {0};
+
+    if (!raycast || !setfml || !setfml->window)
+        return;
+    win = sfRenderWindow_getSize(setfml->window);
+    rect = sfRectangleShape_create();
+    if (!rect)
+        return;
+    sfRectangleShape_setPosition(rect, (sfVector2f){0.0f, 0.0f});
+    sfRectangleShape_setSize(rect,
+        (sfVector2f){(float)win.x, (float)win.y / 2.0f});
+    sfRectangleShape_setFillColor(rect, (sfColor){20, 20, 40, 255});
+    sfRenderWindow_drawRectangleShape(setfml->window, rect, NULL);
+    sfRectangleShape_destroy(rect);
 }

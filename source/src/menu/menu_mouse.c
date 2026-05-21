@@ -14,12 +14,12 @@ static int button_bounds_from_state(gamestate_t state, int *last)
         return 0;
     }
     if (state == GAME_SETTINGS) {
-        *last = 6;
+        *last = 8;
         return 3;
     }
     if (state == GAME_PAUSED) {
-        *last = 10;
-        return 7;
+        *last = 12;
+        return 9;
     }
     *last = -1;
     return -1;

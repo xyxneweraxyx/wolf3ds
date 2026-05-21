@@ -6,6 +6,7 @@
 */
 
 #include "./../../include/menu.h"
+#include "./menu_private.h"
 
 static unsigned int clamp_size(unsigned int value,
     unsigned int min, unsigned int max)
@@ -32,41 +33,14 @@ static void set_button_layout(menu_button_t *button,
     menu_center_text(button->text, &hitbox);
 }
 
-static int fill_volume_number(char label[32], int volume)
-{
-    int index = 8;
-
-    if (volume == 100) {
-        label[index] = '1';
-        label[index + 1] = '0';
-        label[index + 2] = '0';
-        return index + 3;
-    }
-    if (volume >= 10) {
-        label[index] = volume / 10 + '0';
-        label[index + 1] = volume % 10 + '0';
-        return index + 2;
-    }
-    label[index] = volume + '0';
-    return index + 1;
-}
-
-static void fill_volume_label(char label[32], int volume)
-{
-    int index = 0;
-
-    str_cpy("VOLUME: ", label);
-    index = fill_volume_number(label, volume);
-    label[index] = '%';
-    label[index + 1] = '\0';
-}
-
 static void set_settings_label(menu_t *menu,
     const sfVector2u *size, unsigned int text_size)
 {
-    char label[32] = {0};
+    char label[64] = {0};
+    sfVector2u res = MENU_RESOLUTIONS[menu->resolution_index];
 
-    fill_volume_label(label, menu->volume);
+    snprintf(label, sizeof(label), "VOL: %d%%  RES: %ux%u",
+        menu->volume, res.x, res.y);
     sfText_setString(menu->settings_text, label);
     sfText_setCharacterSize(menu->settings_text, text_size);
     menu_center_full_width(menu->settings_text,
@@ -76,29 +50,31 @@ static void set_settings_label(menu_t *menu,
 static void set_fullscreen_label(menu_t *menu)
 {
     if (menu->fullscreen)
-        sfText_setString(menu->buttons[5].text, "FULLSCREEN ON");
+        sfText_setString(menu->buttons[7].text, "FULLSCREEN ON");
     else
-        sfText_setString(menu->buttons[5].text, "FULLSCREEN OFF");
+        sfText_setString(menu->buttons[7].text, "FULLSCREEN OFF");
 }
 
 static void set_settings_buttons(menu_t *menu,
     const sfVector2u *size, float button_width, unsigned int button_size)
 {
-    float small_width = button_width * 0.46f;
-    float center_x = (float)size->x / 2.0f;
-    float shift = small_width * 0.58f;
+    float small = button_width * 0.46f;
+    float cx = (float)size->x / 2.0f;
+    float shift = small * 0.58f;
+    float row1 = (float)size->y * 0.30f;
+    float row2 = (float)size->y * 0.43f;
+    float row3 = (float)size->y * 0.56f;
+    float row4 = (float)size->y * 0.69f;
 
     set_fullscreen_label(menu);
-    for (int i = 3; i <= 6; i++)
+    for (int i = 3; i <= 8; i++)
         sfText_setCharacterSize(menu->buttons[i].text, button_size);
-    set_button_layout(&menu->buttons[3], center_x - shift,
-        size->y * 0.30f, small_width);
-    set_button_layout(&menu->buttons[4], center_x + shift,
-        size->y * 0.30f, small_width);
-    set_button_layout(&menu->buttons[5], center_x,
-        size->y * 0.43f, button_width);
-    set_button_layout(&menu->buttons[6], center_x,
-        size->y * 0.64f, button_width);
+    set_button_layout(&menu->buttons[3], cx - shift, row1, small);
+    set_button_layout(&menu->buttons[4], cx + shift, row1, small);
+    set_button_layout(&menu->buttons[5], cx - shift, row2, small);
+    set_button_layout(&menu->buttons[6], cx + shift, row2, small);
+    set_button_layout(&menu->buttons[7], cx, row3, button_width);
+    set_button_layout(&menu->buttons[8], cx, row4, button_width);
 }
 
 void menu_set_settings_layout(menu_t *menu,

@@ -81,7 +81,5 @@ int update_life(int action, wolf_t *wolf, int dammage)
 {
     if (action == 1)
         return add_life(wolf, dammage);
-    else
-        return del_life(wolf, dammage);
-    return 0;
+    return del_life(wolf, dammage);
 }

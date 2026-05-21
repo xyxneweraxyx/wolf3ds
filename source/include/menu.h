@@ -10,7 +10,7 @@
 
     #include "./wolf3d.h"
 
-    #define MENU_BUTTON_COUNT 11
+    #define MENU_BUTTON_COUNT 13
     #define MENU_ACTION_DELAY 0.18f
     #define MENU_BUTTON_FRAME_WIDTH 1536
     #define MENU_BUTTON_FRAME_HEIGHT 341
@@ -30,6 +30,8 @@ typedef enum menu_action_e {
     MENU_ACTION_SETTINGS,
     MENU_ACTION_VOLUME_DOWN,
     MENU_ACTION_VOLUME_UP,
+    MENU_ACTION_RES_DOWN,
+    MENU_ACTION_RES_UP,
     MENU_ACTION_FULLSCREEN,
     MENU_ACTION_BACK,
     MENU_ACTION_QUIT,
@@ -74,6 +76,7 @@ struct menu_s {
     sfVector2u windowed_size;
     bool fullscreen;
     int volume;
+    int resolution_index;
     int pressed_button;
     int pending_button;
     menu_action_t pending_action;

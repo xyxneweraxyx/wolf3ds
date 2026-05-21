@@ -55,9 +55,9 @@ void menu_reset(menu_t *menu, gamestate_t state)
     if (state == GAME_MENU)
         set_buttons_visibility(menu, 0, 2);
     if (state == GAME_SETTINGS)
-        set_buttons_visibility(menu, 3, 6);
+        set_buttons_visibility(menu, 3, 8);
     if (state == GAME_PAUSED)
-        set_buttons_visibility(menu, 7, 10);
+        set_buttons_visibility(menu, 9, 12);
     menu->pressed_button = -1;
     menu->pending_button = -1;
 }

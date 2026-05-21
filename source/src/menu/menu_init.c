@@ -29,8 +29,7 @@ static bool init_texts(menu_t *menu)
     menu->cinematic_title = create_text(menu, "CINEMATIC");
     menu->cinematic_text = create_text(menu,
         "PLACEHOLDER SCREEN\nFOR THE INTRO SEQUENCE");
-    menu->cinematic_hint = create_text(menu,
-        "PRESS ENTER OR CLICK");
+    menu->cinematic_hint = create_text(menu, "PRESS ENTER OR CLICK");
     if (!menu->title || !menu->subtitle || !menu->settings_text ||
         !menu->cinematic_title || !menu->cinematic_text ||
         !menu->cinematic_hint)
@@ -72,24 +71,30 @@ static bool init_settings_buttons(menu_t *menu)
     if (!init_button(menu, &menu->buttons[4], "VOL +",
             MENU_ACTION_VOLUME_UP))
         return false;
-    if (!init_button(menu, &menu->buttons[5], "FULLSCREEN OFF",
+    if (!init_button(menu, &menu->buttons[5], "RES -",
+            MENU_ACTION_RES_DOWN))
+        return false;
+    if (!init_button(menu, &menu->buttons[6], "RES +",
+            MENU_ACTION_RES_UP))
+        return false;
+    if (!init_button(menu, &menu->buttons[7], "FULLSCREEN OFF",
             MENU_ACTION_FULLSCREEN))
         return false;
-    if (!init_button(menu, &menu->buttons[6], "BACK", MENU_ACTION_BACK))
+    if (!init_button(menu, &menu->buttons[8], "BACK", MENU_ACTION_BACK))
         return false;
     return true;
 }
 
 static bool init_pause_buttons(menu_t *menu)
 {
-    if (!init_button(menu, &menu->buttons[7], "SAVE", MENU_ACTION_SAVE))
+    if (!init_button(menu, &menu->buttons[9], "SAVE", MENU_ACTION_SAVE))
         return false;
-    if (!init_button(menu, &menu->buttons[8], "LOAD", MENU_ACTION_LOAD))
+    if (!init_button(menu, &menu->buttons[10], "LOAD", MENU_ACTION_LOAD))
         return false;
-    if (!init_button(menu, &menu->buttons[9], "BACK TO MENU",
+    if (!init_button(menu, &menu->buttons[11], "BACK TO MENU",
             MENU_ACTION_BACK))
         return false;
-    if (!init_button(menu, &menu->buttons[10], "EXIT", MENU_ACTION_QUIT))
+    if (!init_button(menu, &menu->buttons[12], "EXIT", MENU_ACTION_QUIT))
         return false;
     return true;
 }
@@ -136,6 +141,7 @@ int menu_init(wolf_t *wolf)
     menu->windowed_size = (sfVector2u){0, 0};
     menu->fullscreen = false;
     menu->volume = 100;
+    menu->resolution_index = 3;
     menu->pressed_button = -1;
     menu->pending_button = -1;
     menu->pending_action = MENU_ACTION_NONE;

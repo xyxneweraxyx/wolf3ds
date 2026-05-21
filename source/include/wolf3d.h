@@ -59,6 +59,7 @@
     #define SFML_TXT_WALL "./assets/textures/wall.png"
     #define SFML_TXT_MUSHROOM "./assets/textures/mushroom.png"
     #define SFML_TXT_GROUND "./assets/textures/ground.png"
+    #define SFML_TXT_CEILING "./assets/textures/ceiling.png"
 
     #ifndef MENU_T_DEFINED
         #define MENU_T_DEFINED
@@ -138,5 +139,7 @@ int connect_weapon(wolf_t *wolf);
 int init_weapon(wolf_t *wolf);
 int init_sound(wolf_t *wolf);
 void destroy_sound(sound_t *sound);
+int save_game(wolf_t *wolf);
+int load_game(wolf_t *wolf);
 
 #endif

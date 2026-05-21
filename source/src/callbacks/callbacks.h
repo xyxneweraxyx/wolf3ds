@@ -37,6 +37,7 @@ int connect_raycasts(wolf_t *wolf);
 int connect_keyboard(wolf_t *wolf);
 void draw_wall(col_data_t *data);
 void draw_ground(raycast_t *raycast, setfml_t *setfml);
+void draw_ceiling(raycast_t *raycast, setfml_t *setfml);
 void draw_object(col_data_t *data);
 bool project_object_hit(wolf_t *wolf, object_hit_t *hit,
     struct object_sprite_s *sprite);

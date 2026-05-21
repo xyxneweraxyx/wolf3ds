@@ -101,11 +101,11 @@ static void set_pause_buttons(menu_t *menu,
     button_height = button_width * (float)MENU_BUTTON_BODY_HEIGHT /
         (float)MENU_BUTTON_BODY_WIDTH;
     gap = button_height + (float)size->y * 0.008f;
-    for (int i = 7; i <= 10; i++)
+    for (int i = 9; i <= 12; i++)
         sfText_setCharacterSize(menu->buttons[i].text, button_size);
-    for (int i = 7; i <= 10; i++)
+    for (int i = 9; i <= 12; i++)
         set_button_layout(&menu->buttons[i], size->x / 2.0f,
-            top + gap * (float)(i - 7), button_width);
+            top + gap * (float)(i - 9), button_width);
 }
 
 static void set_pause_layout(menu_t *menu,
