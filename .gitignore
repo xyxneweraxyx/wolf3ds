@@ -1,0 +1,12 @@
+wolf3d
+wolf3d.exe
+obj/
+win_obj/
+*.o
+*.out
+*.pch
+*.Identifier
+*~
+\#*#
+.DS_Store
+stuff/

@@ -1,0 +1,22 @@
+added :
+- gravity
+- oop
+- player
+- collisions
+- raycasting and rendering
+- movement and jumping
+
+to add :
+
+near future :
+- ceiling/ground (with moving texture if possible else rip)
+- items (will be a good first test with adding real sprites)
+- some actual ui?
+
+future :
+- inventory (item management and a UI to go alongside it)
+- enemies (similar to items but implies a decision tree and more management)
+- ladders (implies the ability to detect climbing, simulate it, and manage multiple floors)
+
+distant future (if i feel crazy enough) :
+- update system (implies update sprite, concepts of protection, radius detection, complex UI handling, and small-scaled currency management)
