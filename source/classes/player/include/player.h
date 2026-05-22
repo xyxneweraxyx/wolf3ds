@@ -19,11 +19,11 @@
     // Defines
     #define PLAYER_DEFAULT_HEALTH 100
     #define PLAYER_DEFAULT_DMG 100
-    #define PLAYER_DEFAULT_MOVE_SPEED 1
-    #define PLAYER_DEFAULT_JUMP_POWER 20
+    #define PLAYER_DEFAULT_MOVE_SPEED 7
+    #define PLAYER_DEFAULT_JUMP_POWER 0.2f
     #define PLAYER_DEFAULT_ROTATION 0
-    #define PLAYER_DEFAULT_ROT_SPEED 30
-    #define PLAYER_DEFAULT_GRAVITY 1
+    #define PLAYER_DEFAULT_ROT_SPEED 500
+    #define PLAYER_DEFAULT_GRAVITY 0.01f
 
 // Typedefs
 
@@ -96,10 +96,6 @@ size_t player_adddmg(entity_t *entity, uint16_t value);
 size_t player_gpmovex(entity_t *entity, float value);
 size_t player_gpmovey(entity_t *entity, float value);
 size_t player_gpmovez(entity_t *entity, float value);
-
-// More complex gameplay methods can be added later.
 size_t player_gpjump(entity_t *entity);
-//size_t player_gpattack(const char *name);
-//size_t player_gpdie(const char *name);
 
 #endif

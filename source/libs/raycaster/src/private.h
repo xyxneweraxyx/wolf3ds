@@ -12,50 +12,53 @@
 
 typedef struct ray_exec_s {
 
-    size_t map_x; // X size of the currently stored map.
-    size_t map_y; // Y size of the currently stored map.
+    size_t map_x;
+    size_t map_y;
 
-    float degree_begin; // The beginning point of the degrees for the raycast.
-    float degree_end;   // The end point of the degrees for the raycast.
-    float degree_modulo; // The degrees with a modulo 360 applied.
-    float degree_step;  // Degrees per pixel column.
+    float degree_begin;
+    float degree_end;
+    float degree_modulo;
+    float degree_step;
 
-    int8_t dx; // Step direction on x axis (-1 or 1).
-    int8_t dy; // Step direction on y axis (-1 or 1).
+    int8_t dx;
+    int8_t dy;
 
-    /*
-    Distance along the ray between two consecutive vertical grid lines.
-    */
     float delta_dist_x;
-
-    /*
-    Distance along the ray between two consecutive horizontal grid lines.
-    */
     float delta_dist_y;
 
-    float dist_from_x;  // Distance to the next vertical grid crossing.
-    float dist_from_y;  // Distance to the next horizontal grid crossing.
+    float dist_from_x;
+    float dist_from_y;
 
-    int map_cur_x; // X index of the cell currently being traversed.
-    int map_cur_y; // Y index of the cell currently being traversed.
+    int map_cur_x;
+    int map_cur_y;
 
-    float min_dist; // Distance to the wall that was hit.
-    bool x;         // If true, the wall was hit on an X side (for shading).
-    char hit;       // Map character hit by the raycast.
+    float min_dist;
+    bool x;
+    char hit;
 
-    float screen_width;  // Width of the render window in pixels.
-    float screen_height; // Height of the render window in pixels.
+    float screen_width;
+    float screen_height;
+
+    uint8_t tile_h_bottom;
+    uint8_t tile_h_top;
 
 } ray_exec_t;
 
-// Functions
-size_t number_in_range_f(float number, float base, float range);
-size_t number_in_range_i(int number, int base, int range);
+// Depth buffer
 bool raycast_resize_depth_buffer(raycast_t *raycast, size_t width);
 void raycast_reset_depth_buffer(raycast_t *raycast);
 void raycast_store_depth(raycast_t *raycast, col_data_t *data);
 bool raycast_is_occluded(raycast_t *raycast, col_data_t *data);
-void ini_dda(raycast_t *raycast, ray_exec_t *data);
-bool dda_check_for_collision(ray_exec_t *data);
+
+// Column coverage tracking
+bool raycast_resize_col_range(raycast_t *raycast, size_t width);
+void raycast_reset_col_range(raycast_t *raycast);
+bool raycast_col_is_done(raycast_t *raycast, size_t col, int screen_h);
+void raycast_col_mark(raycast_t *raycast, size_t col, int top, int bot);
+bool raycast_col_is_occluded(raycast_t *raycast, size_t col, int top, int bot);
+
+// Math
+size_t number_in_range_f(float number, float base, float range);
+size_t number_in_range_i(int number, int base, int range);
 
 #endif

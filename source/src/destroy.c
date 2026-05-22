@@ -14,6 +14,15 @@ static void free_map(char **map)
     free(map);
 }
 
+static void free_height_map(uint8_t **map)
+{
+    if (!map)
+        return;
+    for (int i = 0; map[i]; i++)
+        free(map[i]);
+    free(map);
+}
+
 static void destroy_visuals(wolf_t *wolf)
 {
     if (wolf->menu)
@@ -40,6 +49,10 @@ static void destroy_data(wolf_t *wolf)
         free_map(wolf->map);
     if (wolf->object_map)
         free_map(wolf->object_map);
+    if (wolf->height_top)
+        free_height_map(wolf->height_top);
+    if (wolf->height_bottom)
+        free_height_map(wolf->height_bottom);
     if (wolf->classhandler)
         classhandler_destroy(wolf->classhandler);
     if (wolf->alloc)

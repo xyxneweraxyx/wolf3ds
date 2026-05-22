@@ -105,12 +105,10 @@ static void set_draw_bounds(wolf_t *wolf, setfml_t *setfml,
     raycast_t *raycast = wolf->object_raycast;
     float fov = raycast->render.degree * DEG_TO_RAD;
     float proj_dist = ((float)win_size.y / 2.0f) / tanf(fov / 2.0f);
-    float wall_height = proj_dist / sprite->distance;
     float floor_y = 0;
 
-    wall_height *= raycast->render.wall_height;
-    floor_y = ((float)win_size.y + wall_height +
-        (raycast->render.height / sprite->distance)) / 2.0f;
+    floor_y = (float)win_size.y / 2.0f + raycast->eye_height
+        * proj_dist / (sprite->distance * (float)RAYCAST_HEIGHT_UNIT);
     draw->bounds.left = sprite->screen_x - size.x / 2.0f;
     draw->bounds.top = floor_y - size.y;
     draw->bounds.width = size.x;

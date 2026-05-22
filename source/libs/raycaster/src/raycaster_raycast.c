@@ -15,7 +15,10 @@ static int ini_vals(raycast_t *raycast, ray_exec_t *data,
 
     if (!raycast_resize_depth_buffer(raycast, (size_t)win_size.x))
         return RAYCAST_FAIL;
+    if (!raycast_resize_col_range(raycast, (size_t)win_size.x))
+        return RAYCAST_FAIL;
     raycast_reset_depth_buffer(raycast);
+    raycast_reset_col_range(raycast);
     data->screen_width = (float)win_size.x;
     data->screen_height = (float)win_size.y;
     data->map_x = str_len(raycast->origin.map[0]);
@@ -23,7 +26,7 @@ static int ini_vals(raycast_t *raycast, ray_exec_t *data,
     return RAYCAST_SUCC;
 }
 
-void ini_dda(raycast_t *raycast, ray_exec_t *data)
+static void ini_dda(raycast_t *raycast, ray_exec_t *data)
 {
     float cos_a = cosf(data->degree_modulo * DEG_TO_RAD);
     float sin_a = sinf(data->degree_modulo * DEG_TO_RAD);
@@ -44,7 +47,7 @@ void ini_dda(raycast_t *raycast, ray_exec_t *data)
         : frac_y * data->delta_dist_y;
 }
 
-bool dda_check_for_collision(ray_exec_t *data)
+static bool dda_check_for_collision(ray_exec_t *data)
 {
     if (data->dist_from_x < data->dist_from_y) {
         data->min_dist = data->dist_from_x;
@@ -64,6 +67,103 @@ bool dda_check_for_collision(ray_exec_t *data)
     return true;
 }
 
+static void get_tile_heights(raycast_t *raycast, ray_exec_t *data)
+{
+    int x = data->map_cur_x;
+    int y = data->map_cur_y;
+
+    data->tile_h_bottom = 0;
+    data->tile_h_top = (uint8_t)RAYCAST_HEIGHT_UNIT;
+    if (!raycast->height_bottom || !raycast->height_top)
+        return;
+    data->tile_h_bottom = raycast->height_bottom[y][x];
+    data->tile_h_top = raycast->height_top[y][x];
+}
+
+static void fill_col_screen(col_data_t *col, ray_exec_t *data,
+    raycast_t *raycast, float col_x)
+{
+    float cam_a = raycast->origin.degree * DEG_TO_RAD;
+    float fov = raycast->render.degree * DEG_TO_RAD;
+    float proj_dist = (data->screen_width / 2.0f) / tanf(fov / 2.0f);
+    float perp_dist = 0;
+    float ppu = 0;
+    float center_y = data->screen_height / 2.0f;
+
+    perp_dist = data->min_dist
+        * cosf(data->degree_modulo * DEG_TO_RAD - cam_a);
+    ppu = proj_dist / (perp_dist * (float)RAYCAST_HEIGHT_UNIT);
+    col->distance = perp_dist;
+    col->screen_y_top = center_y
+        - ((float)data->tile_h_top - raycast->eye_height) * ppu;
+    col->screen_y_bottom = center_y
+        - ((float)data->tile_h_bottom - raycast->eye_height) * ppu;
+    col->wall_height = col->screen_y_bottom - col->screen_y_top;
+    col->position = (sfVector2f){col_x, col->screen_y_top};
+}
+
+static col_data_t get_wall_segment(raycast_t *raycast, ray_exec_t *data,
+    float col_x)
+{
+    col_data_t col = {0};
+    float cos_a = cosf(data->degree_modulo * DEG_TO_RAD);
+    float sin_a = sinf(data->degree_modulo * DEG_TO_RAD);
+    float hit_pos = data->x
+        ? raycast->origin.origin.y + data->min_dist * sin_a
+        : raycast->origin.origin.x + data->min_dist * cos_a;
+
+    fill_col_screen(&col, data, raycast, col_x);
+    col.raycast = raycast;
+    col.face_x = hit_pos - floorf(hit_pos);
+    col.screen_x = col_x / data->screen_width;
+    col.column = (size_t)col_x;
+    col.tile_bottom = data->tile_h_bottom;
+    col.tile_top = data->tile_h_top;
+    col.hit = data->hit;
+    col.map_x = data->map_cur_x;
+    col.map_y = data->map_cur_y;
+    return col;
+}
+
+static int collect_hits(raycast_t *raycast, ray_exec_t *data,
+    col_data_t hits[32], float col_x)
+{
+    int count = 0;
+    char cell = '\0';
+
+    ini_dda(raycast, data);
+    for (size_t i = 0; i < raycast->calculations.max_dist; i++) {
+        if (!dda_check_for_collision(data))
+            break;
+        cell = raycast->origin.map[data->map_cur_y][data->map_cur_x];
+        if (!raycast_is_collision(raycast, cell))
+            continue;
+        data->hit = cell;
+        get_tile_heights(raycast, data);
+        hits[count] = get_wall_segment(raycast, data, col_x);
+        if (hits[count].wall_height > 0.0f && count < 31)
+            count++;
+    }
+    return count;
+}
+
+static void raycast_column(raycast_t *raycast, ray_exec_t *data,
+    float col_x, setfml_t *setfml)
+{
+    col_data_t hits[32] = {{0}};
+    int count = collect_hits(raycast, data, hits, col_x);
+
+    for (int i = 0; i < count; i++)
+        hits[i].setfml = setfml;
+    if (count > 0)
+        raycast_store_depth(raycast, &hits[0]);
+    for (int i = count - 1; i >= 0; i--) {
+        if (hits[i].wall_height > 0.0f && !raycast_is_occluded(raycast,
+                &hits[i]) && raycast->on_draw)
+            raycast->on_draw(&hits[i]);
+    }
+}
+
 bool raycast_is_collision(raycast_t *raycast, char cell)
 {
     const char *collisions = NULL;
@@ -76,82 +176,6 @@ bool raycast_is_collision(raycast_t *raycast, char cell)
             return true;
     }
     return false;
-}
-
-static bool single_raycast(raycast_t *raycast, ray_exec_t *data)
-{
-    char cell = '\0';
-
-    ini_dda(raycast, data);
-    for (size_t i = 0; i < raycast->calculations.max_dist; i++) {
-        if (!dda_check_for_collision(data))
-            return false;
-        cell = raycast->origin.map[data->map_cur_y][data->map_cur_x];
-        if (raycast_is_collision(raycast, cell)) {
-            data->hit = cell;
-            return true;
-        }
-    }
-    return false;
-}
-
-static float get_wall_height(raycast_t *raycast, ray_exec_t *data,
-    float *perp_dist)
-{
-    float cam_angle = raycast->origin.degree * DEG_TO_RAD;
-    float fov = raycast->render.degree * DEG_TO_RAD;
-    float proj_dist = (data->screen_width / 2.0f) / tanf(fov / 2.0f);
-
-    *perp_dist = data->min_dist
-        * cosf(data->degree_modulo * DEG_TO_RAD - cam_angle);
-    return (proj_dist / *perp_dist) * raycast->render.wall_height;
-}
-
-static float get_face_x(raycast_t *raycast, ray_exec_t *data,
-    float cos_a, float sin_a)
-{
-    float hit_pos = 0;
-
-    hit_pos = data->x
-        ? raycast->origin.origin.y + data->min_dist * sin_a
-        : raycast->origin.origin.x + data->min_dist * cos_a;
-    return hit_pos - floorf(hit_pos);
-}
-
-static col_data_t get_col_data(raycast_t *raycast, ray_exec_t *data,
-    float col_x, setfml_t *setfml)
-{
-    col_data_t col_data = {0};
-    float cos_a = cosf(data->degree_modulo * DEG_TO_RAD);
-    float sin_a = sinf(data->degree_modulo * DEG_TO_RAD);
-    float perp_dist = 0;
-
-    col_data.wall_height = get_wall_height(raycast, data, &perp_dist);
-    col_data.setfml = setfml;
-    col_data.raycast = raycast;
-    col_data.distance = perp_dist;
-    col_data.face_x = get_face_x(raycast, data, cos_a, sin_a);
-    col_data.screen_x = col_x / data->screen_width;
-    col_data.column = (size_t)col_x;
-    col_data.position.x = col_x;
-    col_data.position.y = (data->screen_height - col_data.wall_height
-        + (raycast->render.height / perp_dist)) / 2.0f;
-    col_data.hit = data->hit;
-    col_data.map_x = data->map_cur_x;
-    col_data.map_y = data->map_cur_y;
-    return col_data;
-}
-
-static void draw_hit(raycast_t *raycast, ray_exec_t *data,
-    float col_x, setfml_t *setfml)
-{
-    col_data_t col_data = get_col_data(raycast, data, col_x, setfml);
-
-    raycast_store_depth(raycast, &col_data);
-    if (raycast_is_occluded(raycast, &col_data))
-        return;
-    if (raycast->on_draw)
-        raycast->on_draw(&col_data);
 }
 
 size_t raycast_raycast(raycast_t *raycast, setfml_t *setfml)
@@ -172,8 +196,7 @@ size_t raycast_raycast(raycast_t *raycast, setfml_t *setfml)
             * 180.0f / PI;
         data.degree_modulo = (((int)degree + 360) % 360)
             + (degree - (int)degree);
-        if (single_raycast(raycast, &data))
-            draw_hit(raycast, &data, col_x, setfml);
+        raycast_column(raycast, &data, col_x, setfml);
     }
     return RAYCAST_SUCC;
 }

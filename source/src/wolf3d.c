@@ -119,26 +119,58 @@ static char **create_map(const char *const src_map[])
     return map;
 }
 
-static size_t get_map_area(char **map)
+static uint8_t *create_height_row(char *map_row, uint8_t top_val)
 {
-    size_t height = 0;
+    int cols = str_len(map_row);
+    uint8_t *row = malloc(sizeof(uint8_t) * cols);
 
-    if (!map || !map[0])
-        return 0;
-    for (; map[height]; height++);
-    return str_len(map[0]) * height;
+    if (!row)
+        return NULL;
+    for (int x = 0; x < cols; x++)
+        row[x] = (map_row[x] != '0') ? top_val : 0;
+    return row;
+}
+
+static bool ini_height_maps(wolf_t *wolf)
+{
+    int rows = 0;
+
+    for (; wolf->map[rows]; rows++);
+    wolf->height_top = calloc(rows + 1, sizeof(uint8_t *));
+    wolf->height_bottom = calloc(rows + 1, sizeof(uint8_t *));
+    if (!wolf->height_top || !wolf->height_bottom)
+        return false;
+    for (int y = 0; y < rows; y++) {
+        wolf->height_top[y] = create_height_row(wolf->map[y],
+            (uint8_t)RAYCAST_HEIGHT_UNIT);
+        wolf->height_bottom[y] = create_height_row(wolf->map[y], 0);
+        if (!wolf->height_top[y] || !wolf->height_bottom[y])
+            return false;
+    }
+    wolf->height_top[3][4] = 8;
+    wolf->height_top[3][6] = 32;
+    wolf->height_bottom[3][7] = 20;
+    wolf->height_top[3][7] = 24;
+    wolf->height_top[5][9] = 8;
+    return true;
 }
 
 static bool ini_object_hits(wolf_t *wolf)
 {
+    size_t height = 0;
+    size_t area = 0;
+
+    if (!wolf->object_map || !wolf->object_map[0])
+        return false;
+    for (; wolf->object_map[height]; height++);
+    area = (size_t)str_len(wolf->object_map[0]) * height;
     wolf->object_hit_count = 0;
-    wolf->object_hit_capacity = get_map_area(wolf->object_map);
-    wolf->object_hits = c_alloc(sizeof(object_hit_t),
-        wolf->object_hit_capacity, wolf->alloc);
+    wolf->object_hit_capacity = area;
+    wolf->object_hits = c_alloc(sizeof(object_hit_t), area, wolf->alloc);
     wolf->object_sprite_count = 0;
-    wolf->object_sprite_capacity = wolf->object_hit_capacity;
+    wolf->object_sprite_capacity = area;
     wolf->object_sprites = c_alloc(sizeof(struct object_sprite_s),
-        wolf->object_sprite_capacity, wolf->alloc);
+        area, wolf->alloc);
     return wolf->object_hits != NULL && wolf->object_sprites != NULL;
 }
 
@@ -156,6 +188,8 @@ static wolf_t *ini_main(c_alloc_t *alloc)
     wolf->map = create_map(DEFAULT_MAP);
     wolf->object_map = create_map(DEFAULT_OBJECT_MAP);
     if (!wolf->map || !wolf->object_map)
+        return destroy_return_null(wolf);
+    if (!ini_height_maps(wolf))
         return destroy_return_null(wolf);
     if (!ini_object_hits(wolf))
         return destroy_return_null(wolf);

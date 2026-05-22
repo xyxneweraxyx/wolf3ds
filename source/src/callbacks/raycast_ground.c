@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** wolf3d
 ** File description:
-** Raycast ground and ceiling drawing callback.
+** Ground, ceiling and wall top rendering.
 */
 
 #include "./../../include/wolf3d.h"
@@ -20,17 +20,6 @@ static void set_ground_camera(ground_draw_t *draw)
     draw->plane.y = draw->direction.x * plane_size;
 }
 
-static void set_ground_shade(sfColor *color, float distance)
-{
-    int shade = 255 - (int)(distance * 12.0f);
-
-    if (shade < 45)
-        shade = 45;
-    if (shade > 255)
-        shade = 255;
-    *color = (sfColor){shade, shade, shade, 255};
-}
-
 static void append_ground_vertex(ground_draw_t *draw, sfVector2f *position,
     sfVector2f *floor_pos, sfColor *color)
 {
@@ -45,17 +34,20 @@ static void append_ground_vertex(ground_draw_t *draw, sfVector2f *position,
 
 static void append_ground_row(ground_draw_t *draw, ground_row_t *row)
 {
+    int shade = 255 - (int)(row->distance * 12.0f);
     sfColor color = {0};
     sfVector2f pos = {0};
 
-    set_ground_shade(&color, row->distance);
-    pos = (sfVector2f){0.0f, row->y};
+    if (shade < 45) shade = 45;
+    if (shade > 255) shade = 255;
+    color = (sfColor){shade, shade, shade, 255};
+    pos = (sfVector2f){0.0f, (float)row->y};
     append_ground_vertex(draw, &pos, &row->floor_left, &color);
-    pos = (sfVector2f){draw->win_size.x, row->y};
+    pos = (sfVector2f){draw->win_size.x, (float)row->y};
     append_ground_vertex(draw, &pos, &row->floor_right, &color);
-    pos = (sfVector2f){draw->win_size.x, row->y + 1};
+    pos = (sfVector2f){draw->win_size.x, (float)(row->y + 1)};
     append_ground_vertex(draw, &pos, &row->floor_right, &color);
-    pos = (sfVector2f){0.0f, row->y + 1};
+    pos = (sfVector2f){0.0f, (float)(row->y + 1)};
     append_ground_vertex(draw, &pos, &row->floor_left, &color);
 }
 
@@ -81,35 +73,50 @@ static void init_ground_draw(ground_draw_t *draw)
     draw->tex_size = sfTexture_getSize(draw->texture->texture);
     proj_dist = ((float)draw->win_size.x / 2.0f) / tanf(fov / 2.0f);
     draw->center_y = (float)draw->win_size.y / 2.0f;
-    draw->camera_height = (proj_dist + draw->raycast->render.height) / 2.0f;
+    draw->camera_height = proj_dist * draw->raycast->eye_height
+        / (float)RAYCAST_HEIGHT_UNIT;
     sfTexture_setRepeated(draw->texture->texture, sfTrue);
     sfVertexArray_setPrimitiveType(draw->vertices, sfQuads);
     set_ground_camera(draw);
 }
 
-static void fill_ground_vertices(ground_draw_t *draw)
+static bool row_has_top(ground_draw_t *draw, ground_row_t *row, uint8_t h)
 {
-    ground_row_t row = {0};
-    int y_max = (int)draw->win_size.y;
+    int mx = (int)((row->floor_left.x + row->floor_right.x) / 2.0f);
+    int my = (int)((row->floor_left.y + row->floor_right.y) / 2.0f);
 
-    for (row.y = (int)draw->center_y; row.y < y_max; row.y++) {
-        set_ground_row(draw, &row);
-        append_ground_row(draw, &row);
-    }
+    if (mx < 0 || my < 0 || !draw->raycast->height_top)
+        return false;
+    if (!draw->raycast->origin.map[my])
+        return false;
+    if (!raycast_is_collision(draw->raycast, draw->raycast->origin.map[my][mx]))
+        return false;
+    return draw->raycast->height_top[my][mx] == h;
 }
 
-static void draw_ground_vertices(ground_draw_t *draw)
+static void fill_tops_at_height(ground_draw_t *draw, uint8_t h)
 {
-    sfRenderStates states = {sfBlendAlpha, sfTransform_Identity, NULL, NULL};
-    sfRenderWindow *window = draw->setfml->window;
+    ground_row_t row = {0};
+    float orig_cam_h = draw->camera_height;
 
-    states.texture = draw->texture->texture;
-    sfRenderWindow_drawVertexArray(window, draw->vertices, &states);
+    draw->camera_height = orig_cam_h *
+        (draw->raycast->eye_height - (float)h) / draw->raycast->eye_height;
+    for (row.y = (int)draw->center_y; row.y < (int)draw->win_size.y; row.y++) {
+        set_ground_row(draw, &row);
+        if (row.distance <= 0.0f || row.distance > 64.0f)
+            continue;
+        if (!row_has_top(draw, &row, h))
+            continue;
+        append_ground_row(draw, &row);
+    }
+    draw->camera_height = orig_cam_h;
 }
 
 void draw_ground(raycast_t *raycast, setfml_t *setfml)
 {
     ground_draw_t draw = {0};
+    ground_row_t row = {0};
+    sfRenderStates states = {sfBlendAlpha, sfTransform_Identity, NULL, NULL};
 
     if (!raycast || !setfml || !setfml->window)
         return;
@@ -122,8 +129,12 @@ void draw_ground(raycast_t *raycast, setfml_t *setfml)
     if (!draw.vertices)
         return;
     init_ground_draw(&draw);
-    fill_ground_vertices(&draw);
-    draw_ground_vertices(&draw);
+    for (row.y = (int)draw.center_y; row.y < (int)draw.win_size.y; row.y++) {
+        set_ground_row(&draw, &row);
+        append_ground_row(&draw, &row);
+    }
+    states.texture = draw.texture->texture;
+    sfRenderWindow_drawVertexArray(draw.setfml->window, draw.vertices, &states);
     sfVertexArray_destroy(draw.vertices);
 }
 
@@ -144,4 +155,27 @@ void draw_ceiling(raycast_t *raycast, setfml_t *setfml)
     sfRectangleShape_setFillColor(rect, (sfColor){20, 20, 40, 255});
     sfRenderWindow_drawRectangleShape(setfml->window, rect, NULL);
     sfRectangleShape_destroy(rect);
+}
+
+void draw_wall_tops(raycast_t *raycast, setfml_t *setfml)
+{
+    ground_draw_t draw = {0};
+    sfRenderStates states = {sfBlendAlpha, sfTransform_Identity, NULL, NULL};
+
+    if (!raycast || !setfml || !setfml->window || !raycast->height_top)
+        return;
+    draw.raycast = raycast;
+    draw.setfml = setfml;
+    draw.texture = setfml_texturefromname(setfml, "ground", false);
+    if (!draw.texture || !draw.texture->texture)
+        return;
+    draw.vertices = sfVertexArray_create();
+    if (!draw.vertices)
+        return;
+    init_ground_draw(&draw);
+    for (uint8_t h = 1; (float)h < raycast->eye_height; h++)
+        fill_tops_at_height(&draw, h);
+    states.texture = draw.texture->texture;
+    sfRenderWindow_drawVertexArray(draw.setfml->window, draw.vertices, &states);
+    sfVertexArray_destroy(draw.vertices);
 }

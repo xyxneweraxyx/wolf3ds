@@ -23,6 +23,12 @@ static void init_raycast_defaults(raycast_t *raycast,
     raycast->depth_width = 0;
     raycast->depth_source = NULL;
     raycast->on_draw = NULL;
+    raycast->height_bottom = NULL;
+    raycast->height_top = NULL;
+    raycast->eye_height = (float)RAYCAST_HEIGHT_UNIT / 2.0f;
+    raycast->col_y_top = NULL;
+    raycast->col_y_bot = NULL;
+    raycast->col_range_width = 0;
 }
 
 raycast_t *raycast_create(char **map, ray_twod_t *origin)

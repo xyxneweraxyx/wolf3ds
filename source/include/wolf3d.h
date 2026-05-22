@@ -14,6 +14,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <stdbool.h>
+    #include <stdint.h>
     #include <unistd.h>
     #include <math.h>
     #include <time.h>
@@ -103,6 +104,8 @@ typedef struct wolf_s {
     buttonfml_t *buttonfml;
     char **map;
     char **object_map;
+    uint8_t **height_bottom;
+    uint8_t **height_top;
     gamestate_t state;
     params_t params;
     raycast_t *raycast;

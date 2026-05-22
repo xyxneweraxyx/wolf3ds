@@ -14,6 +14,7 @@ static void modify_raycast_data(raycast_t *ray, player_t *player)
     ray->origin.origin.x = player->pos.x;
     ray->origin.origin.y = player->pos.z;
     ray->render.height = player->pos.y;
+    ray->eye_height = (float)RAYCAST_HEIGHT_UNIT / 2.0f + player->pos.y;
 }
 
 static entity_t *get_player_entity(wolf_t *wolf)
@@ -47,6 +48,7 @@ static size_t raycast_function(setfml_t *setfml, void *userdata)
         return (size_t)SETFML_FAIL;
     draw_ceiling(wolf->raycast, setfml);
     draw_ground(wolf->raycast, setfml);
+    draw_wall_tops(wolf->raycast, setfml);
     raycast_raycast(wolf->raycast, setfml);
     wolf->object_hit_count = 0;
     raycast_raycast(wolf->object_raycast, setfml);
@@ -97,6 +99,8 @@ static raycast_t *create_wall_raycast(wolf_t *wolf, player_t *plr)
     if (!raycast)
         return NULL;
     raycast->on_draw = draw_wall;
+    raycast->height_bottom = wolf->height_bottom;
+    raycast->height_top = wolf->height_top;
     return raycast;
 }
 

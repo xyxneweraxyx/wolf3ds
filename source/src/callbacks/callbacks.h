@@ -45,4 +45,5 @@ void project_object_hits(wolf_t *wolf);
 void draw_object_sprites(wolf_t *wolf, setfml_t *setfml);
 void shader2(col_data_t *data);
 void play_step_sound(wolf_t *wolf);
+void draw_wall_tops(raycast_t *raycast, setfml_t *setfml);
 #endif

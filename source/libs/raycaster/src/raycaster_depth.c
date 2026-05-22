@@ -37,7 +37,8 @@ void raycast_store_depth(raycast_t *raycast, col_data_t *data)
 {
     if (!raycast->depth_buffer || data->column >= raycast->depth_width)
         return;
-    raycast->depth_buffer[data->column] = data->distance;
+    if (data->distance < raycast->depth_buffer[data->column])
+        raycast->depth_buffer[data->column] = data->distance;
 }
 
 bool raycast_is_occluded(raycast_t *raycast, col_data_t *data)
