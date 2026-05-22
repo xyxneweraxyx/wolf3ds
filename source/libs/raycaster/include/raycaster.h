@@ -78,6 +78,7 @@ typedef struct raycast_s {
     uint8_t *col_tile_top;
     float *col_depth2;
     uint8_t *col_top2;
+    uint8_t *col_chain_bot;
 } raycast_t;
 
 raycast_t *raycast_create(char **map, ray_twod_t *origin);

@@ -8,6 +8,12 @@
 #include "./../../include/wolf3d.h"
 #include "./callbacks.h"
 
+/*
+** Per-column occlusion chain max size.
+** Must match the value used in raycaster_raycast.c and raycaster_col.c.
+*/
+#define COL_CHAIN_MAX 16
+
 static bool tops_tile_matches(ground_draw_t *draw, int mx, int my, uint8_t h)
 {
     if (mx < 0 || my < 0 || mx >= draw->map_w || my >= draw->map_h
@@ -21,20 +27,51 @@ static bool tops_tile_matches(ground_draw_t *draw, int mx, int my, uint8_t h)
     return draw->raycast->height_top[my][mx] == h;
 }
 
+/*
+** Exact per-entry blocking test.
+** A wall at distance d_w with vertical extent [bot, top] blocks a ray
+** going from eye_h to a surface at (dist, h) iff the ray's height at
+** d_w lies inside [bot, top]. We use ray_h = eye - (d_w/dist)*(eye - h),
+** which works for both descending (eye > h) and ascending rays.
+*/
+static bool entry_blocks(raycast_t *r, size_t idx, float dist, uint8_t h)
+{
+    float d_w = r->col_depth2[idx];
+    float ray_h;
+
+    if (d_w >= dist)
+        return false;
+    ray_h = r->eye_height - (d_w / dist) * (r->eye_height - (float)h);
+    return ray_h >= (float)r->col_chain_bot[idx] &&
+        ray_h <= (float)r->col_tile_top[idx];
+}
+
+/*
+** Per-column occlusion check.
+** Walks the chain stored by raycaster_raycast in increasing-depth order
+** and returns true as soon as some entry actually blocks the ray. The
+** early-exit on d_w >= dist makes the typical case fast: only the few
+** entries closer than the surface get tested.
+*/
 static bool is_blocked(ground_draw_t *draw, int col, float dist, uint8_t h)
 {
-    float *db = draw->raycast->depth_buffer;
-    uint8_t *wt = draw->raycast->col_tile_top;
-    size_t dw = draw->raycast->depth_width;
+    raycast_t *r = draw->raycast;
+    size_t base = (size_t)col * COL_CHAIN_MAX;
+    uint8_t chain_len = 0;
 
-    if (!db || !wt || (size_t)col >= dw || db[col] >= FLT_MAX)
+    if (!r->col_tile_top || !r->col_depth2 || !r->col_top2 ||
+        !r->col_chain_bot)
         return false;
-    if (wt[col] > h && dist > db[col])
-        return true;
-    if (!draw->raycast->col_depth2 || !draw->raycast->col_top2)
+    if (col < 0 || (size_t)col >= r->col_range_width)
         return false;
-    return draw->raycast->col_top2[col] > h
-        && dist > draw->raycast->col_depth2[col];
+    chain_len = r->col_top2[col];
+    for (uint8_t i = 0; i < chain_len; i++) {
+        if (r->col_depth2[base + i] >= dist)
+            return false;
+        if (entry_blocks(r, base + i, dist, h))
+            return true;
+    }
+    return false;
 }
 
 static void tops_append_col(ground_draw_t *draw, ground_row_t *row,

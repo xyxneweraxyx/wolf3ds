@@ -8,6 +8,12 @@
 #include "./../include/raycaster.h"
 #include "./private.h"
 
+/*
+** Per-column occlusion chain max size.
+** Must match the value used in raycaster_col.c and raycast_tops.c.
+*/
+#define COL_CHAIN_MAX 16
+
 static int ini_vals(raycast_t *raycast, ray_exec_t *data,
     sfRenderWindow *window)
 {
@@ -147,16 +153,36 @@ static int collect_hits(raycast_t *raycast, ray_exec_t *data,
     return count;
 }
 
+/*
+** Build the per-column occlusion chain.
+** Stores ALL hits in DDA order with their (depth, tile_bottom, tile_top).
+** No filtering: is_blocked uses the exact range test ray_h in [bot, top]
+** to decide blocking, so we need every wall, including floating blocks
+** whose tops don't increase the running max.
+*/
+static void store_chain(raycast_t *r, col_data_t hits[], int n, size_t c)
+{
+    uint8_t chain_len = 0;
+    size_t base = c * COL_CHAIN_MAX;
+
+    if (!r->col_tile_top || !r->col_depth2 || !r->col_top2 ||
+        !r->col_chain_bot || c >= r->col_range_width)
+        return;
+    for (int i = 0; i < n && chain_len < COL_CHAIN_MAX; i++) {
+        r->col_depth2[base + chain_len] = hits[i].distance;
+        r->col_tile_top[base + chain_len] = hits[i].tile_top;
+        r->col_chain_bot[base + chain_len] = hits[i].tile_bottom;
+        chain_len++;
+    }
+    r->col_top2[c] = chain_len;
+}
+
 static void store_col_data(raycast_t *r, col_data_t hits[], int n, size_t c)
 {
     raycast_store_depth(r, &hits[0]);
-    raycast_col_mark(r, c, (int)hits[0].screen_y_top, (int)hits[0].screen_y_bottom);
-    if (r->col_tile_top && c < r->col_range_width)
-        r->col_tile_top[c] = hits[0].tile_top;
-    if (n >= 2 && r->col_depth2 && c < r->col_range_width)
-        r->col_depth2[c] = hits[1].distance;
-    if (n >= 2 && r->col_top2 && c < r->col_range_width)
-        r->col_top2[c] = hits[1].tile_top;
+    raycast_col_mark(r, c, (int)hits[0].screen_y_top,
+        (int)hits[0].screen_y_bottom);
+    store_chain(r, hits, n, c);
 }
 
 static void raycast_column(raycast_t *raycast, ray_exec_t *data,

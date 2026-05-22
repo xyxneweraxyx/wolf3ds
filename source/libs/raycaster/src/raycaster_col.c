@@ -2,24 +2,44 @@
 ** EPITECH PROJECT, 2025
 ** raycaster
 ** File description:
-** Raycaster column coverage tracking.
+** Raycaster column coverage tracking and per-column occlusion chain.
 */
 
 #include <limits.h>
 #include "./../include/raycaster.h"
 #include "./private.h"
 
+/*
+** Per-column occlusion chain max size.
+** Must match the value used in raycaster_raycast.c and raycast_tops.c.
+**
+** Storage layout (flat arrays indexed as col * COL_CHAIN_MAX + slot):
+**   raycast->col_tile_top   : chain entry tops    (uint8_t)
+**   raycast->col_chain_bot  : chain entry bottoms (uint8_t)
+**   raycast->col_depth2     : chain entry depths  (float)
+**   raycast->col_top2       : chain length per column (uint8_t[width])
+**
+** The chain now stores ALL hits along the ray (in DDA order), not just
+** walls with strictly increasing tops. The exact range check in
+** is_blocked uses (bot, top, depth) to decide whether each wall actually
+** blocks a given (h, dist), which makes floating blocks correct.
+*/
+#define COL_CHAIN_MAX 16
+
 static bool ini_extra_ranges(raycast_t *raycast, size_t width)
 {
-    uint8_t *tt = c_alloc(sizeof(uint8_t), width, raycast->alloc);
-    float *d2 = c_alloc(sizeof(float), width, raycast->alloc);
+    size_t chain_cells = width * COL_CHAIN_MAX;
+    uint8_t *tt = c_alloc(sizeof(uint8_t), chain_cells, raycast->alloc);
+    float *d2 = c_alloc(sizeof(float), chain_cells, raycast->alloc);
     uint8_t *t2 = c_alloc(sizeof(uint8_t), width, raycast->alloc);
+    uint8_t *bb = c_alloc(sizeof(uint8_t), chain_cells, raycast->alloc);
 
-    if (!tt || !d2 || !t2)
+    if (!tt || !d2 || !t2 || !bb)
         return false;
     raycast->col_tile_top = tt;
     raycast->col_depth2 = d2;
     raycast->col_top2 = t2;
+    raycast->col_chain_bot = bb;
     return true;
 }
 
@@ -47,9 +67,8 @@ void raycast_reset_col_range(raycast_t *raycast)
     for (size_t i = 0; i < raycast->col_range_width; i++) {
         raycast->col_y_top[i] = INT_MAX;
         raycast->col_y_bot[i] = INT_MIN;
-        if (raycast->col_tile_top) raycast->col_tile_top[i] = 0;
-        if (raycast->col_depth2) raycast->col_depth2[i] = FLT_MAX;
-        if (raycast->col_top2) raycast->col_top2[i] = 0;
+        if (raycast->col_top2)
+            raycast->col_top2[i] = 0;
     }
 }
 
