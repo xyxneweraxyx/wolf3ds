@@ -61,4 +61,9 @@ bool raycast_col_is_occluded(raycast_t *raycast, size_t col, int top, int bot);
 size_t number_in_range_f(float number, float base, float range);
 size_t number_in_range_i(int number, int base, int range);
 
+int ini_vals(raycast_t *raycast, ray_exec_t *data,
+    sfRenderWindow *window);
+void raycast_column(raycast_t *raycast, ray_exec_t *data,
+    float col_x, setfml_t *setfml);
+
 #endif

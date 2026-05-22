@@ -7,6 +7,21 @@
 
 #include "./../include/raycaster.h"
 
+static void init_raycast_defaults_2(raycast_t *raycast)
+{
+    raycast->depth_source = NULL;
+    raycast->on_draw = NULL;
+    raycast->height_bottom = NULL;
+    raycast->height_top = NULL;
+    raycast->eye_height = (float)RAYCAST_HEIGHT_UNIT / 2.0f;
+    raycast->col_y_top = NULL;
+    raycast->col_y_bot = NULL;
+    raycast->col_range_width = 0;
+    raycast->col_tile_top = NULL;
+    raycast->col_depth2 = NULL;
+    raycast->col_top2 = NULL;
+}
+
 static void init_raycast_defaults(raycast_t *raycast,
     char **map, ray_twod_t *origin)
 {
@@ -21,17 +36,6 @@ static void init_raycast_defaults(raycast_t *raycast,
     raycast->calculations.max_dist = 100;
     raycast->depth_buffer = NULL;
     raycast->depth_width = 0;
-    raycast->depth_source = NULL;
-    raycast->on_draw = NULL;
-    raycast->height_bottom = NULL;
-    raycast->height_top = NULL;
-    raycast->eye_height = (float)RAYCAST_HEIGHT_UNIT / 2.0f;
-    raycast->col_y_top = NULL;
-    raycast->col_y_bot = NULL;
-    raycast->col_range_width = 0;
-    raycast->col_tile_top = NULL;
-    raycast->col_depth2 = NULL;
-    raycast->col_top2 = NULL;
 }
 
 raycast_t *raycast_create(char **map, ray_twod_t *origin)
@@ -46,6 +50,7 @@ raycast_t *raycast_create(char **map, ray_twod_t *origin)
         return NULL;
     raycast->alloc = alloc;
     init_raycast_defaults(raycast, map, origin);
+    init_raycast_defaults_2(raycast);
     return raycast;
 }
 

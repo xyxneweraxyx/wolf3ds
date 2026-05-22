@@ -12,7 +12,6 @@
 ** Per-column occlusion chain max size.
 ** Must match the value used in raycaster_raycast.c and raycaster_col.c.
 */
-#define COL_CHAIN_MAX 16
 
 static bool tops_tile_matches(ground_draw_t *draw, int mx, int my, uint8_t h)
 {
@@ -56,7 +55,7 @@ static bool entry_blocks(raycast_t *r, size_t idx, float dist, uint8_t h)
 static bool is_blocked(ground_draw_t *draw, int col, float dist, uint8_t h)
 {
     raycast_t *r = draw->raycast;
-    size_t base = (size_t)col * COL_CHAIN_MAX;
+    size_t base = (size_t)col * 16;
     uint8_t chain_len = 0;
 
     if (!r->col_tile_top || !r->col_depth2 || !r->col_top2 ||
@@ -80,8 +79,10 @@ static void tops_append_col(ground_draw_t *draw, ground_row_t *row,
     int shade = 255 - (int)(row->distance * 12.0f);
     sfVertex v = {0};
 
-    if (shade < 45) shade = 45;
-    if (shade > 255) shade = 255;
+    if (shade < 45)
+        shade = 45;
+    if (shade > 255)
+        shade = 255;
     v.color = (sfColor){shade, shade, shade, 255};
     v.texCoords = (sfVector2f){world->x * (float)draw->tex_size.x,
         world->y * (float)draw->tex_size.y};
@@ -105,8 +106,10 @@ static void tops_scan_row(ground_draw_t *draw, ground_row_t *row, uint8_t h)
 
     for (int col = 0; col < (int)draw->win_size.x; col += 2) {
         t = ((float)col + 1.0f) / win_w;
-        world.x = row->floor_left.x + t * (row->floor_right.x - row->floor_left.x);
-        world.y = row->floor_left.y + t * (row->floor_right.y - row->floor_left.y);
+        world.x = row->floor_left.x + t * (row->floor_right.x -
+            row->floor_left.x);
+        world.y = row->floor_left.y + t * (row->floor_right.y -
+            row->floor_left.y);
         mx = (int)world.x;
         my = (int)world.y;
         if (!tops_tile_matches(draw, mx, my, h))

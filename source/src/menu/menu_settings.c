@@ -64,8 +64,10 @@ static void set_windowed_mode(wolf_t *wolf, sfVideoMode *mode)
         size.x = max_x;
         size.y = max_y;
     }
-    size.x = (size.x < min_x) ? min_x : (size.x > max_x ? max_x : size.x);
-    size.y = (size.y < min_y) ? min_y : (size.y > max_y ? max_y : size.y);
+    size.x = size.x < min_x ? min_x : size.x;
+    size.x = size.x > max_x ? max_x : size.x;
+    size.y = size.y < min_y ? min_y : size.y;
+    size.y = size.y > max_y ? max_y : size.y;
     *mode = (sfVideoMode){size.x, size.y, 8};
 }
 

@@ -12,9 +12,8 @@
 ** Per-column occlusion chain max size.
 ** Must match the value used in raycaster_col.c and raycast_tops.c.
 */
-#define COL_CHAIN_MAX 16
 
-static int ini_vals(raycast_t *raycast, ray_exec_t *data,
+int ini_vals(raycast_t *raycast, ray_exec_t *data,
     sfRenderWindow *window)
 {
     sfVector2u win_size = sfRenderWindow_getSize(window);
@@ -163,12 +162,12 @@ static int collect_hits(raycast_t *raycast, ray_exec_t *data,
 static void store_chain(raycast_t *r, col_data_t hits[], int n, size_t c)
 {
     uint8_t chain_len = 0;
-    size_t base = c * COL_CHAIN_MAX;
+    size_t base = c * 16;
 
     if (!r->col_tile_top || !r->col_depth2 || !r->col_top2 ||
         !r->col_chain_bot || c >= r->col_range_width)
         return;
-    for (int i = 0; i < n && chain_len < COL_CHAIN_MAX; i++) {
+    for (int i = 0; i < n && chain_len < 16; i++) {
         r->col_depth2[base + chain_len] = hits[i].distance;
         r->col_tile_top[base + chain_len] = hits[i].tile_top;
         r->col_chain_bot[base + chain_len] = hits[i].tile_bottom;
@@ -185,7 +184,7 @@ static void store_col_data(raycast_t *r, col_data_t hits[], int n, size_t c)
     store_chain(r, hits, n, c);
 }
 
-static void raycast_column(raycast_t *raycast, ray_exec_t *data,
+void raycast_column(raycast_t *raycast, ray_exec_t *data,
     float col_x, setfml_t *setfml)
 {
     col_data_t hits[32] = {{0}};
@@ -200,41 +199,4 @@ static void raycast_column(raycast_t *raycast, ray_exec_t *data,
                 &hits[i]) && raycast->on_draw)
             raycast->on_draw(&hits[i]);
     }
-}
-
-bool raycast_is_collision(raycast_t *raycast, char cell)
-{
-    const char *collisions = NULL;
-
-    if (!raycast || !raycast->origin.collisions)
-        return false;
-    collisions = raycast->origin.collisions;
-    for (int i = 0; collisions[i]; i++) {
-        if (collisions[i] == cell)
-            return true;
-    }
-    return false;
-}
-
-size_t raycast_raycast(raycast_t *raycast, setfml_t *setfml)
-{
-    ray_exec_t data = {0};
-    float col_x = 0;
-    float degree = 0;
-
-    if (!raycast || !raycast->origin.map ||
-        !raycast->origin.map[0] || !setfml->window)
-        return RAYCAST_FAIL;
-    if (ini_vals(raycast, &data, setfml->window) == RAYCAST_FAIL)
-        return RAYCAST_FAIL;
-    for (; col_x < data.screen_width; col_x += 1) {
-        degree = raycast->origin.degree + atanf(
-            (2.0f * (col_x + 0.5f) / data.screen_width - 1.0f) *
-            tanf(raycast->render.degree * DEG_TO_RAD / 2.0f))
-            * 180.0f / PI;
-        data.degree_modulo = (((int)degree + 360) % 360)
-            + (degree - (int)degree);
-        raycast_column(raycast, &data, col_x, setfml);
-    }
-    return RAYCAST_SUCC;
 }

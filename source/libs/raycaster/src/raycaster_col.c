@@ -24,11 +24,10 @@
 ** is_blocked uses (bot, top, depth) to decide whether each wall actually
 ** blocks a given (h, dist), which makes floating blocks correct.
 */
-#define COL_CHAIN_MAX 16
 
 static bool ini_extra_ranges(raycast_t *raycast, size_t width)
 {
-    size_t chain_cells = width * COL_CHAIN_MAX;
+    size_t chain_cells = width * 16;
     uint8_t *tt = c_alloc(sizeof(uint8_t), chain_cells, raycast->alloc);
     float *d2 = c_alloc(sizeof(float), chain_cells, raycast->alloc);
     uint8_t *t2 = c_alloc(sizeof(uint8_t), width, raycast->alloc);

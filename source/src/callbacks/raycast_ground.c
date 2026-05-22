@@ -38,8 +38,10 @@ static void append_ground_row(ground_draw_t *draw, ground_row_t *row)
     sfColor color = {0};
     sfVector2f pos = {0};
 
-    if (shade < 45) shade = 45;
-    if (shade > 255) shade = 255;
+    if (shade < 45)
+        shade = 45;
+    if (shade > 255)
+        shade = 255;
     color = (sfColor){shade, shade, shade, 255};
     pos = (sfVector2f){0.0f, (float)row->y};
     append_ground_vertex(draw, &pos, &row->floor_left, &color);
@@ -87,6 +89,13 @@ static void init_ground_draw(ground_draw_t *draw)
             draw->map_w++;
 }
 
+static void finish_ground(ground_draw_t *draw, sfRenderStates *s)
+{
+    s->texture = draw->texture->texture;
+    sfRenderWindow_drawVertexArray(draw->setfml->window, draw->vertices, s);
+    sfVertexArray_destroy(draw->vertices);
+}
+
 void draw_ground(raycast_t *raycast, setfml_t *setfml)
 {
     ground_draw_t draw = {0};
@@ -108,9 +117,7 @@ void draw_ground(raycast_t *raycast, setfml_t *setfml)
         set_ground_row(&draw, &row);
         append_ground_row(&draw, &row);
     }
-    states.texture = draw.texture->texture;
-    sfRenderWindow_drawVertexArray(draw.setfml->window, draw.vertices, &states);
-    sfVertexArray_destroy(draw.vertices);
+    finish_ground(&draw, &states);
 }
 
 void draw_ceiling(raycast_t *raycast, setfml_t *setfml)
