@@ -48,10 +48,8 @@ void raycast_col_mark(raycast_t *raycast, size_t col, int top, int bot)
 {
     if (!raycast->col_y_top || col >= raycast->col_range_width)
         return;
-    if (top < raycast->col_y_top[col])
-        raycast->col_y_top[col] = top;
-    if (bot > raycast->col_y_bot[col])
-        raycast->col_y_bot[col] = bot;
+    raycast->col_y_top[col] = top;
+    raycast->col_y_bot[col] = bot;
 }
 
 bool raycast_col_is_occluded(raycast_t *raycast, size_t col, int top, int bot)

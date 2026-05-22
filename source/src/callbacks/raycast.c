@@ -48,8 +48,8 @@ static size_t raycast_function(setfml_t *setfml, void *userdata)
         return (size_t)SETFML_FAIL;
     draw_ceiling(wolf->raycast, setfml);
     draw_ground(wolf->raycast, setfml);
-    draw_wall_tops(wolf->raycast, setfml);
     raycast_raycast(wolf->raycast, setfml);
+    draw_wall_tops(wolf->raycast, setfml);
     wolf->object_hit_count = 0;
     raycast_raycast(wolf->object_raycast, setfml);
     project_object_hits(wolf);

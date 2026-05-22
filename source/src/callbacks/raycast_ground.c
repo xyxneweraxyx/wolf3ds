@@ -51,7 +51,7 @@ static void append_ground_row(ground_draw_t *draw, ground_row_t *row)
     append_ground_vertex(draw, &pos, &row->floor_left, &color);
 }
 
-static void set_ground_row(ground_draw_t *draw, ground_row_t *row)
+void set_ground_row(ground_draw_t *draw, ground_row_t *row)
 {
     row->distance = draw->camera_height / (row->y + 0.5f - draw->center_y);
     row->floor_left.x = draw->raycast->origin.origin.x +
@@ -78,38 +78,13 @@ static void init_ground_draw(ground_draw_t *draw)
     sfTexture_setRepeated(draw->texture->texture, sfTrue);
     sfVertexArray_setPrimitiveType(draw->vertices, sfQuads);
     set_ground_camera(draw);
-}
-
-static bool row_has_top(ground_draw_t *draw, ground_row_t *row, uint8_t h)
-{
-    int mx = (int)((row->floor_left.x + row->floor_right.x) / 2.0f);
-    int my = (int)((row->floor_left.y + row->floor_right.y) / 2.0f);
-
-    if (mx < 0 || my < 0 || !draw->raycast->height_top)
-        return false;
-    if (!draw->raycast->origin.map[my])
-        return false;
-    if (!raycast_is_collision(draw->raycast, draw->raycast->origin.map[my][mx]))
-        return false;
-    return draw->raycast->height_top[my][mx] == h;
-}
-
-static void fill_tops_at_height(ground_draw_t *draw, uint8_t h)
-{
-    ground_row_t row = {0};
-    float orig_cam_h = draw->camera_height;
-
-    draw->camera_height = orig_cam_h *
-        (draw->raycast->eye_height - (float)h) / draw->raycast->eye_height;
-    for (row.y = (int)draw->center_y; row.y < (int)draw->win_size.y; row.y++) {
-        set_ground_row(draw, &row);
-        if (row.distance <= 0.0f || row.distance > 64.0f)
-            continue;
-        if (!row_has_top(draw, &row, h))
-            continue;
-        append_ground_row(draw, &row);
-    }
-    draw->camera_height = orig_cam_h;
+    draw->map_h = 0;
+    while (draw->raycast->origin.map[draw->map_h])
+        draw->map_h++;
+    draw->map_w = 0;
+    if (draw->map_h > 0)
+        while (draw->raycast->origin.map[0][draw->map_w])
+            draw->map_w++;
 }
 
 void draw_ground(raycast_t *raycast, setfml_t *setfml)
@@ -174,8 +149,12 @@ void draw_wall_tops(raycast_t *raycast, setfml_t *setfml)
         return;
     init_ground_draw(&draw);
     for (uint8_t h = 1; (float)h < raycast->eye_height; h++)
-        fill_tops_at_height(&draw, h);
+        tops_fill_height(&draw, h);
+    printf("[DWT] loop done, vtx count=%zu\n",
+        sfVertexArray_getVertexCount(draw.vertices));
+    fflush(stdout);
     states.texture = draw.texture->texture;
     sfRenderWindow_drawVertexArray(draw.setfml->window, draw.vertices, &states);
+    printf("[DWT] draw done\n"); fflush(stdout);
     sfVertexArray_destroy(draw.vertices);
 }

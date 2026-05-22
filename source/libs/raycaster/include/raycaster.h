@@ -113,5 +113,6 @@ raycast_t *raycast_create(char **map, ray_twod_t *origin);
 void raycast_destroy(raycast_t *raycast);
 size_t raycast_raycast(raycast_t *raycast, setfml_t *setfml);
 bool raycast_is_collision(raycast_t *raycast, char cell);
+void raycast_col_mark(raycast_t *raycast, size_t col, int top, int bot);
 
 #endif
