@@ -29,6 +29,9 @@ static void init_raycast_defaults(raycast_t *raycast,
     raycast->col_y_top = NULL;
     raycast->col_y_bot = NULL;
     raycast->col_range_width = 0;
+    raycast->col_tile_top = NULL;
+    raycast->col_depth2 = NULL;
+    raycast->col_top2 = NULL;
 }
 
 raycast_t *raycast_create(char **map, ray_twod_t *origin)

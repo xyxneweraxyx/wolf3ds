@@ -147,6 +147,18 @@ static int collect_hits(raycast_t *raycast, ray_exec_t *data,
     return count;
 }
 
+static void store_col_data(raycast_t *r, col_data_t hits[], int n, size_t c)
+{
+    raycast_store_depth(r, &hits[0]);
+    raycast_col_mark(r, c, (int)hits[0].screen_y_top, (int)hits[0].screen_y_bottom);
+    if (r->col_tile_top && c < r->col_range_width)
+        r->col_tile_top[c] = hits[0].tile_top;
+    if (n >= 2 && r->col_depth2 && c < r->col_range_width)
+        r->col_depth2[c] = hits[1].distance;
+    if (n >= 2 && r->col_top2 && c < r->col_range_width)
+        r->col_top2[c] = hits[1].tile_top;
+}
+
 static void raycast_column(raycast_t *raycast, ray_exec_t *data,
     float col_x, setfml_t *setfml)
 {
@@ -155,11 +167,8 @@ static void raycast_column(raycast_t *raycast, ray_exec_t *data,
 
     for (int i = 0; i < count; i++)
         hits[i].setfml = setfml;
-    if (count > 0) {
-        raycast_store_depth(raycast, &hits[0]);
-        raycast_col_mark(raycast, (size_t)col_x,
-            (int)hits[0].screen_y_top, (int)hits[0].screen_y_bottom);
-    }
+    if (count > 0)
+        store_col_data(raycast, hits, count, (size_t)col_x);
     for (int i = count - 1; i >= 0; i--) {
         if (hits[i].wall_height > 0.0f && !raycast_is_occluded(raycast,
                 &hits[i]) && raycast->on_draw)

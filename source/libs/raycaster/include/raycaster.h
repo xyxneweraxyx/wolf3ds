@@ -8,7 +8,6 @@
 #ifndef RAYCASTER
     #define RAYCASTER
 
-    // Includes default libs
     #include <stdio.h>
     #include <stdlib.h>
     #include <stddef.h>
@@ -19,55 +18,26 @@
     #include <math.h>
     #include <SFML/Graphics.h>
 
-    // Includes private libs
     #include "./../../c_alloc/c_alloc.h"
     #include "./../../setfml/setfml.h"
 
-    // Defines
     #define RAYCAST_SUCC 0
     #define RAYCAST_FAIL -1
     #define EMPTY_VERTEX -1
     #define RAYCAST_HEIGHT_UNIT 16
-
-    // Hardcoded values
     #define PI 3.141592
     #define DEG_TO_RAD PI / 180
 
-// Typedefs
-
-typedef struct ray_threed_s {
-    float x;
-    float y;
-    float z;
-} ray_threed_t;
-
-typedef struct ray_twod_s {
-    float x;
-    float y;
-} ray_twod_t;
-
-typedef struct shape_s {
-    ray_threed_t vertices[4];
-    float dist;
-} shape_t;
-
+typedef struct ray_threed_s { float x; float y; float z; } ray_threed_t;
+typedef struct ray_twod_s { float x; float y; } ray_twod_t;
+typedef struct shape_s { ray_threed_t vertices[4]; float dist; } shape_t;
 typedef struct ray_render_s {
-    int16_t height;
-    float wall_height;
-    uint8_t degree;
-    float distance;
+    int16_t height; float wall_height; uint8_t degree; float distance;
 } ray_render_t;
-
 typedef struct ray_origin_s {
-    char **map;
-    ray_twod_t origin;
-    float degree;
-    const char *collisions;
+    char **map; ray_twod_t origin; float degree; const char *collisions;
 } ray_origin_t;
-
-typedef struct ray_calc_s {
-    size_t max_dist;
-} ray_calc_t;
+typedef struct ray_calc_s { size_t max_dist; } ray_calc_t;
 
 typedef struct col_data_s {
     setfml_t *setfml;
@@ -105,9 +75,10 @@ typedef struct raycast_s {
     int *col_y_top;
     int *col_y_bot;
     size_t col_range_width;
+    uint8_t *col_tile_top;
+    float *col_depth2;
+    uint8_t *col_top2;
 } raycast_t;
-
-// Functions
 
 raycast_t *raycast_create(char **map, ray_twod_t *origin);
 void raycast_destroy(raycast_t *raycast);

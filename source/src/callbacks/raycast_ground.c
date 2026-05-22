@@ -150,11 +150,7 @@ void draw_wall_tops(raycast_t *raycast, setfml_t *setfml)
     init_ground_draw(&draw);
     for (uint8_t h = 1; (float)h < raycast->eye_height; h++)
         tops_fill_height(&draw, h);
-    printf("[DWT] loop done, vtx count=%zu\n",
-        sfVertexArray_getVertexCount(draw.vertices));
-    fflush(stdout);
     states.texture = draw.texture->texture;
     sfRenderWindow_drawVertexArray(draw.setfml->window, draw.vertices, &states);
-    printf("[DWT] draw done\n"); fflush(stdout);
     sfVertexArray_destroy(draw.vertices);
 }
